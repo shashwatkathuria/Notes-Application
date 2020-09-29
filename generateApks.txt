@@ -1,0 +1,68 @@
+-- Install bundletool and keystore
+alias bundletool='java -jar ./bundletool-all.jar'
+
+-- Generate keys and enter password etc details as prompted and place the keystore file in some folder and do not commit it
+-- Suppose password is set as 'password'
+
+keytool -genkey -v -keystore <enter-name>.keystore -alias <enter-alias> -keyalg RSA -keysize 2048 -validity 10000
+
+-- Place the created keystore file under the android/app
+
+-- build.gradle in android/app [Google supports "arm64-v8a", "armeabi-v7a", "x86", "x86_64" architectures]
+android {
+    ...
+    defaultConfig {
+        ...
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+        }
+        ...
+    }
+
+    signingConfigs {
+        ...
+        release {
+            if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
+                storeFile file(MYAPP_RELEASE_STORE_FILE)
+                storePassword MYAPP_RELEASE_STORE_PASSWORD
+                keyAlias MYAPP_RELEASE_KEY_ALIAS
+                keyPassword MYAPP_RELEASE_KEY_PASSWORD
+            }
+        }
+        ...
+    }
+
+    buildTypes {
+        ...
+        release {
+            ...
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            ...
+        }
+        ...
+    }
+}
+
+-- Enter details in gradle.properties:
+
+MYAPP_RELEASE_STORE_FILE=my-key.keystore
+MYAPP_RELEASE_KEY_ALIAS=NotesApplicationKey
+MYAPP_RELEASE_STORE_PASSWORD=password
+MYAPP_RELEASE_KEY_PASSWORD=password
+
+
+-- Universal Apk(Big Size, Generates .apk) [You're done, get apk from android/app/build/outputs/apk/release/app-release.apk]:
+./gradlew assembleRelease
+
+-- Android App Bundle for Architecture Specific[You need to continue, get aab from android/app/build/outputs/bundle/release/app-release.aab](Small Sizes, Generates .aab, Preferred):
+./gradlew bundleRelease
+
+-- Generate .apks from bundletool
+
+bundletool build-apks --bundle=./build/outputs/bundle/release/app-release.aab --output=./app-releases.apks --ks=my-key.keystore --ks-pass=pass:password --ks-key-alias=NotesApplicationKey --key-pass=pass:password
+
+-- Rename app-releases.apks to app-releases.zip
+-- Extract folder
+-- Use the standalone apps as required
+-- You're done
