@@ -1,14 +1,24 @@
--- Install bundletool and keystore
-alias bundletool='java -jar ./bundletool-all.jar'
+INSTRUCTIONS TO BUILD SIGNED RELEASE APK
+--------------------------------------------
 
--- Generate keys and enter password etc details as prompted and place the keystore file in some folder and do not commit it
--- Suppose password is set as 'password'
+--------------------------------------------
+Some important info regarding production
+1. For troubleshooting, while connecting through adb, run 'adb logcat *:E' for production build live error logs
+2. For adding svg rules if using 'react-native-svg', add '-keep public class com.horcrux.svg.** {*;}' to android/app/proguard-rules.pro
+3. If using http traffic, add 'android:usesCleartextTraffic="true"' to <application/> xml tag in 'android/app/src/main/AndroidManifest.xml'
+--------------------------------------------
 
+Step 1: Install bundletool and place it in android/app/ and keystore
+alias bundletool='java -jar ./bundletool-all-1.2.0.jar'
+
+Step 2:
 keytool -genkey -v -keystore <enter-name>.keystore -alias <enter-alias> -keyalg RSA -keysize 2048 -validity 10000
+- Generate keys and enter password etc details as prompted and place the keystore file in some folder and do not commit it
+- Suppose password is set as 'password'
+- Place the created keystore file under the android/app/
 
--- Place the created keystore file under the android/app
+Step 3: In build.gradle in android/app/ [Google supports "arm64-v8a", "armeabi-v7a", "x86", "x86_64" architectures], add
 
--- build.gradle in android/app [Google supports "arm64-v8a", "armeabi-v7a", "x86", "x86_64" architectures]
 android {
     ...
     defaultConfig {
@@ -44,7 +54,7 @@ android {
     }
 }
 
--- Enter details in gradle.properties:
+Step 4: Go back to android/ folder and enter details in gradle.properties:
 
 MYAPP_RELEASE_STORE_FILE=my-key.keystore
 MYAPP_RELEASE_KEY_ALIAS=NotesApplicationKey
@@ -52,17 +62,23 @@ MYAPP_RELEASE_STORE_PASSWORD=password
 MYAPP_RELEASE_KEY_PASSWORD=password
 
 
--- Universal Apk(Big Size, Generates .apk) [You're done, get apk from android/app/build/outputs/apk/release/app-release.apk]:
+Step 5:
+- Universal Apk(Big Size, Generates .apk) [You're done, get apk from android/app/build/outputs/apk/release/app-release.apk]:
 ./gradlew assembleRelease
 
--- Android App Bundle for Architecture Specific[You need to continue, get aab from android/app/build/outputs/bundle/release/app-release.aab](Small Sizes, Generates .aab, Preferred):
+OR
+
+- Android App Bundle for Architecture Specific[You need to continue, get aab from android/app/build/outputs/bundle/release/app-release.aab](Small Sizes, Generates .aab, Preferred):
 ./gradlew bundleRelease
 
--- Generate .apks from bundletool
+Step 6: Go back to android/app/ folder
+
+Step 7: Generate .apks using bundletool
 
 bundletool build-apks --bundle=./build/outputs/bundle/release/app-release.aab --output=./app-releases.apks --ks=my-key.keystore --ks-pass=pass:password --ks-key-alias=NotesApplicationKey --key-pass=pass:password
 
--- Rename app-releases.apks to app-releases.zip
--- Extract folder
--- Use the standalone apps as required
--- You're done
+Step 8: Rename app-releases.apks to app-releases.zip and extract folder
+Step 9:Open the extracted folder and use the standalone apps as required
+----------------------------------
+DONE
+----------------------------------
